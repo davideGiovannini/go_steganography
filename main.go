@@ -26,13 +26,15 @@ func main() {
 	//Read the Png
 	image_file, err := os.Open(args.image_path)
 	if err != nil {
-		panic("Error while opening image!")
+		fmt.Println("Error while opening image!")
+		os.Exit(-1)
 	}
 	defer image_file.Close()
 
 	image, err := png.Decode(image_file)
 	if err != nil {
-		panic("Error while decoding png!")
+		fmt.Println("Error while decoding png!")
+		os.Exit(-1)
 	}
 
 	if args.wants_decode {
@@ -50,14 +52,16 @@ func call_encode(args Arguments, image image.Image, data chan byte) {
 	//Open the target file
 	file, err := os.Open(args.target_path)
 	if err != nil {
-		panic(fmt.Sprintf("Error while opening %s", args.target_path))
+		fmt.Printf("Error while opening %s\n", args.target_path)
+		os.Exit(-1)
 	}
 	defer file.Close()
 
 	// get the file size
 	stat, err := file.Stat()
 	if err != nil {
-		panic(fmt.Sprintf("Error while getting stats of file: %s", args.target_path))
+		fmt.Printf("Error while getting stats of file: %s", args.target_path)
+		os.Exit(-1)
 	}
 
 	rect := image.Bounds()
@@ -76,7 +80,8 @@ func call_encode(args Arguments, image image.Image, data chan byte) {
 	fmt.Println(stat.Size()/1000, "KB\\", container_space/1000, "KB")
 
 	if !isOk {
-		panic(fmt.Sprintf("Target file: %s does not fit into image file: %s", args.target_path, args.image_path))
+		fmt.Printf("Target file: %s does not fit into image file: %s\n", args.target_path, args.image_path)
+		os.Exit(-2)
 	}
 
 	if args.only_info {
@@ -88,14 +93,15 @@ func call_encode(args Arguments, image image.Image, data chan byte) {
 
 		go scan(file, stat.Size(), data)
 
-		encapsulate(image, uint8(args.terminator), args.use_full_byte, args.align, data)
+		encode(image, uint8(args.terminator), args.use_full_byte, args.align, data)
 	}
 }
 
 func call_decode(args Arguments, image image.Image, data chan byte) {
 	target_file, err := os.Create(args.target_path)
 	if err != nil {
-		panic(fmt.Sprintf("Error while opening %s for writing.", args.target_path))
+		fmt.Printf("Error while opening %s for writing.\n", args.target_path)
+		os.Exit(-1)
 	}
 
 	fmt.Println("Decode")
@@ -109,7 +115,8 @@ func call_decode(args Arguments, image image.Image, data chan byte) {
 	terminated := <-signal
 
 	if !terminated {
-		panic("There were errors writing the output file")
+		fmt.Println("There were errors writing the output file")
+		os.Exit(-1)
 	}
 }
 
@@ -153,15 +160,21 @@ func parse_command_args() Arguments {
 	case str_var == "l":
 		align = 'l'
 	default:
-		panic("Wrong align parameter")
+		fmt.Println("Wrong align parameter\nUsage:")
+		flag.PrintDefaults()
+		os.Exit(-3)
 	}
 
 	if image_path == "" || target_path == "" {
-		panic("You must specify a valid path for both image and target")
+		fmt.Println("You must specify a valid path for both image and target\nUsage:")
+		flag.PrintDefaults()
+		os.Exit(-3)
 	}
 
 	if terminator > 255 || terminator == 0 {
-		panic("Wrong terminator, must be in range 1-255")
+		fmt.Println("Wrong terminator, must be in range 1-255\nUsage:")
+		flag.PrintDefaults()
+		os.Exit(-3)
 	}
 
 	return Arguments{image_path, target_path, wants_decode, full_byte, align, terminator, onlyInfo}

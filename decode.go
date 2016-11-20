@@ -39,7 +39,6 @@ func writeToFile(w *os.File, data chan byte, signal chan bool) {
 	//send a  signal to the main thread,
 	//so that it can end and terminate the program
 	signal <- true
-
 }
 
 /*
@@ -120,8 +119,7 @@ func extractFromAlignment(R, G, B, A uint8, align rune) (b byte) {
 		mask = 12 // 1100
 		shift = 2
 	default:
-		fmt.Println("Horrible Error! Wrong alignment")
-		return
+		panic("Horrible Error! Wrong alignment")
 	}
 
 	R = (R & mask) >> shift
